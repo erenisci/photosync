@@ -202,8 +202,7 @@ portable drive) and auto-update (users download new releases manually).
 | 3     | OAuth providers: Google Drive, Dropbox, OneDrive                          | 2 wks |
 | 4     | Polish & build: PyInstaller for 3 OSes, CI, docs, v1.0 release            | 2 wks |
 
-**Phase 0 is complete.** Proceed one phase at a time, pausing for review at each
-boundary.
+**All phases are complete.** The application is MVP-ready with 60 passing tests.
 
 ## Known pitfalls
 

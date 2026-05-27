@@ -8,24 +8,38 @@ USB flash drive.
 
 - Python 3.11+
 - Dev dependencies: `pip install -e ".[dev]"` (installs PyInstaller, ruff, mypy,
-  pytest)
+  pytest, customtkinter)
 
-## 1. Fetch the rclone binaries
+## Quick build (recommended)
 
-The rclone binaries live in `bin/` and are **not** committed (they are
-gitignored). Download the pinned version with checksum verification:
+`scripts/build.py` handles everything — rclone download, PyInstaller, and release
+zip creation:
+
+```bash
+python scripts/build.py               # full build for current OS
+python scripts/build.py --skip-rclone  # skip rclone download (if already in bin/)
+python scripts/build.py --skip-package # build exe only, no zip
+```
+
+Output: `dist/PhotoSync-v0.1.0-{windows|linux|darwin}.zip`
+
+## Manual steps (if needed)
+
+### 1. Fetch the rclone binaries
+
+The rclone binaries live in `bin/` and are **not** committed (gitignored).
+Download the pinned version with checksum verification:
 
 ```bash
 python scripts/download_rclone.py            # all platforms
-python scripts/download_rclone.py --target linux   # one platform
+python scripts/download_rclone.py --target windows  # one platform
 ```
 
-This writes `bin/rclone.exe`, `bin/rclone-mac`, and `bin/rclone-linux`. The
-version is pinned in `scripts/download_rclone.py` (`RCLONE_VERSION`) because the
-`--progress` output we parse can change between rclone releases — bump it
-deliberately and re-test.
+The version is pinned in `scripts/download_rclone.py` (`RCLONE_VERSION = 1.74.2`)
+because the `--progress` output we parse can change between rclone releases — bump
+it deliberately and re-test.
 
-## 2. Build the executable
+### 2. Build the executable
 
 ```bash
 pyinstaller --onefile --windowed --name PhotoSync \
@@ -35,11 +49,9 @@ pyinstaller --onefile --windowed --name PhotoSync \
 ```
 
 > On Windows the `--add-data` separator is `;` instead of `:` —
-> `--add-data "bin;bin"`. `scripts/build.py` (Phase 4) abstracts this per-OS.
+> `--add-data "bin;bin"`. `scripts/build.py` handles this automatically.
 
-The output is `dist/PhotoSync` (or `dist/PhotoSync.exe`).
-
-## 3. Package the release
+### 3. Package the release
 
 Bundle the executable with `README.txt` and `LICENSE` into a per-platform zip:
 
@@ -47,16 +59,36 @@ Bundle the executable with `README.txt` and `LICENSE` into a per-platform zip:
 PhotoSync-vX.Y.Z-{windows|macos|linux}.zip
 ```
 
-`data/` is intentionally absent — PhotoSync creates it on first run, keeping the
-release minimal.
+`data/` is intentionally absent — PhotoSync creates it on first run.
+
+## Development testing (without PyInstaller)
+
+You can test directly from source on a USB flash drive:
+
+```bash
+# 1. Download rclone for your OS
+python scripts/download_rclone.py --target windows
+
+# 2. Run with GUI
+python -m app
+
+# 3. Or run in CLI mode (no GUI needed)
+python -m app --cli --password <pw> --scan-root E:\
+```
 
 ## Cross-platform builds
 
 PyInstaller does not cross-compile: each OS must be built on its own runner. The
-intended setup is a GitHub Actions matrix (`windows-latest`, `macos-latest`,
-`ubuntu-latest`), with each job downloading its own rclone binary and producing
-its own zip. See [.github/workflows/ci.yml](../.github/workflows/ci.yml) for the
-lint/type-check/test pipeline; the release build job is added in Phase 4.
+GitHub Actions release workflow (`.github/workflows/release.yml`) runs a 3-OS
+matrix triggered by pushing a `v*` tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Each runner downloads its platform's rclone binary, builds the exe, and uploads
+the zip as a GitHub Release artifact.
 
 ## Signing notes
 
