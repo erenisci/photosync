@@ -41,16 +41,20 @@ class SyncStats:
 FileEventCallback = Callable[[str, Path], None]
 
 
-def _hash_with_cache(db: Database, path: Path) -> str:
-    """Return the file's SHA-256, reusing the scan cache when unchanged."""
+def _hash_with_cache(db: Database, path: Path) -> tuple[str, int]:
+    """Return ``(sha256, size_bytes)`` reusing the scan cache when unchanged.
+
+    The stat result is captured once and reused so that the size recorded for
+    upload history matches the bytes that were actually hashed.
+    """
     stat = path.stat()
     abs_path = str(path.resolve())
     cached = db.get_cached_hash(abs_path, stat.st_mtime_ns, stat.st_size)
     if cached is not None:
-        return cached
+        return cached, stat.st_size
     digest = hasher.sha256_file(path)
     db.cache_hash(abs_path, stat.st_mtime_ns, stat.st_size, digest)
-    return digest
+    return digest, stat.st_size
 
 
 def _remote_path(target_path: str, local: Path, root: Path) -> str:
@@ -92,18 +96,18 @@ def sync(
     for path in file_list:
         try:
             emit("hashing", path)
-            digest = _hash_with_cache(db, path)
+            digest, size_bytes = _hash_with_cache(db, path)
 
             if db.is_uploaded(digest):
                 stats.skipped += 1
                 emit("skipped", path)
                 continue
 
-            remote_path = _remote_path(target_path, path, root)
+            dest = _remote_path(target_path, path, root)
             emit("uploading", path)
-            rclone.copyto(path, remote, remote_path)
+            rclone.copyto(path, remote, dest)
 
-            db.record_upload(digest, path.name, path.stat().st_size, remote_path)
+            db.record_upload(digest, path.name, size_bytes, dest)
             stats.uploaded += 1
             emit("uploaded", path)
         except (RcloneError, OSError) as exc:

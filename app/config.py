@@ -8,6 +8,7 @@ password by rclone itself.
 
 from __future__ import annotations
 
+import contextlib
 import json
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -104,4 +105,6 @@ def save_settings(settings: Settings, path: Path | None = None) -> None:
     payload = json.dumps(settings.to_dict(), indent=2, ensure_ascii=False)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(payload, encoding="utf-8")
+    with contextlib.suppress(OSError):
+        tmp.chmod(0o600)  # owner-only on Unix; no-op on FAT32/exFAT
     tmp.replace(path)

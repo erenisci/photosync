@@ -131,6 +131,7 @@ class WizardApp(ctk.CTk):
             self._oauth_status.set_ok("Connected!")
             self._next2.configure(state="normal")
         else:
+            self._token_json = None  # Clear sensitive data on failure.
             self._oauth_status.set_error(f"Failed: {error}")
             self._oauth_btn.configure(state="normal")
 
@@ -308,6 +309,8 @@ class WizardApp(ctk.CTk):
     # ── helpers ─────────────────────────────────────────────────────────
 
     def _clear(self) -> None:
+        # Clear sensitive data between screens.
+        self._rclone_params = {}
         for child in self._container.winfo_children():
             child.destroy()
 

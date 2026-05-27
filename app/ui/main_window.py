@@ -33,6 +33,7 @@ class MainWindow(ctk.CTk):
         self._settings = settings
         self._password = password
         self._running = False
+        self._counts: dict[str, int] = {"uploaded": 0, "skipped": 0, "failed": 0, "total": 0}
 
         self._build_ui()
 
@@ -76,8 +77,9 @@ class MainWindow(ctk.CTk):
 
     def _toggle(self) -> None:
         if self._running:
-            return  # TODO Phase 2+: implement cancellation
+            return
         self._running = True
+        self._counts = {"uploaded": 0, "skipped": 0, "failed": 0, "total": 0}
         self._btn.configure(state="disabled", text="Running…")
         threading.Thread(target=self._sync_worker, daemon=True).start()
 
@@ -107,7 +109,6 @@ class MainWindow(ctk.CTk):
         "skipped": "⏭️",
         "failed": "❌",
     }
-    _counts = {"uploaded": 0, "skipped": 0, "failed": 0, "total": 0}
 
     def _on_event(self, event: str, path: Path) -> None:
         self.after(0, lambda: self._update_ui(event, path))
