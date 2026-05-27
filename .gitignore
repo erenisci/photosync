@@ -1,0 +1,35 @@
+# Bundled rclone binaries — fetched at build time by scripts/download_rclone.py
+bin/
+
+# Build artifacts
+build/
+dist/
+*.spec
+*.egg-info/
+
+# Runtime data created on first run (lives next to the executable on the USB drive)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Internal / not for the public repo
+CLAUDE.md
+docs/PROGRESS.md
