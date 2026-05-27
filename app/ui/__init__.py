@@ -1,1 +1,1 @@
-"""CustomTkinter user interface (implemented in Phase 2)."""
+"""CustomTkinter user interface — wizard, main window, and password prompt."""

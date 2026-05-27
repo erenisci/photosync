@@ -138,17 +138,38 @@ def main(argv: list[str] | None = None) -> int:
         settings = load_settings()
         return _run_sync(settings, args.password, args.scan_root)
 
-    # GUI path — Phase 2+. For now fall back to CLI instructions.
+    # GUI path.
+    import customtkinter as ctk
+
+    from app.ui.main_window import MainWindow
+    from app.ui.password_prompt import ask_password
+    from app.ui.wizard import run_wizard
+
+    ctk.set_appearance_mode("System")
+    ctk.set_default_color_theme("blue")
+
+    gui_settings: Settings
+    gui_password: str
+
     if not settings_exist():
-        print("GUI wizard not yet implemented. Use --cli mode with setup flags.")
-        print("Example:")
-        print(
-            "  python -m app.main --cli --endpoint https://s3.us-west-004.backblazeb2.com "
-            "--access-key-id KEY --secret-access-key SECRET --password pw"
-        )
-        return 1
-    print("GUI not yet implemented. Use --cli --password <pw> to sync.")
-    return 1
+        wiz_settings, wiz_password = run_wizard()
+        if wiz_settings is None or wiz_password is None:
+            return 1
+        gui_settings = wiz_settings
+        gui_password = wiz_password
+    else:
+        gui_settings = load_settings()
+        root = ctk.CTk()
+        root.withdraw()
+        entered = ask_password(root)
+        root.destroy()
+        if entered is None:
+            return 1
+        gui_password = entered
+
+    win = MainWindow(gui_settings, gui_password)
+    win.mainloop()
+    return 0
 
 
 if __name__ == "__main__":

@@ -53,6 +53,14 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 files = ["app", "scripts"]
 
+[[tool.mypy.overrides]]
+module = "customtkinter.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.ui.*"
+disable_error_code = ["misc", "no-any-return"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
