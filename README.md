@@ -13,17 +13,11 @@ cloud providers and handles OAuth flows and encryption for us.
 
 ## Status
 
-Early development. **Phase 0 (scaffolding)** is implemented:
+**MVP complete.** All four development phases are implemented and tested (60 tests,
+mypy strict, ruff). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full
+design.
 
-- `app/paths.py` — USB root / bundle resolution and rclone binary lookup
-- `app/config.py` — `settings.json` read/write
-- `app/db.py` — SQLite upload history + scan cache
-- `scripts/download_rclone.py` — fetches rclone binaries for packaging
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design and the
-development roadmap.
-
-## Features (target)
+## Features
 
 - Scan photos/videos (extension whitelist + magic-byte check)
 - SHA-256 hashing with a local scan cache (skip re-hashing unchanged files)
