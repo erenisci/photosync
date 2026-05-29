@@ -61,6 +61,7 @@ def _cli_setup(args: argparse.Namespace) -> Settings:
         remote_name=args.remote_name or "photosync-remote",
         remote_type=args.remote_type or "s3",
         target_path=args.target_path or "PhotoSync/Backup",
+        mode=args.mode,
     )
     save_settings(settings)
 
@@ -87,7 +88,7 @@ def _cli_setup(args: argparse.Namespace) -> Settings:
 
 
 def _run_sync(settings: Settings, password: str | None, scan_root: Path | None) -> int:
-    root = scan_root or paths.get_app_root()
+    root = scan_root or paths.get_source_dir()
     rclone = RcloneClient(
         binary=paths.get_rclone_binary(),
         config_path=paths.get_rclone_config_path(),
@@ -101,6 +102,7 @@ def _run_sync(settings: Settings, password: str | None, scan_root: Path | None) 
             remote=settings.remote_name,
             target_path=settings.target_path,
             on_event=_print_event,
+            mode=settings.mode,
         )
     _print_summary(stats)
     return 1 if stats.failed else 0
@@ -111,6 +113,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--cli", action="store_true", help="run in CLI mode (no GUI)")
     p.add_argument("--password", help="master password for rclone config")
     p.add_argument("--scan-root", type=Path, help="override scan root (for testing)")
+    p.add_argument(
+        "--mode",
+        choices=("backup", "catalog"),
+        default="backup",
+        help="backup: keep originals; catalog: replace with thumbnail+URL stub",
+    )
     # Quick setup flags for Phase 1 testing.
     setup = p.add_argument_group("quick setup (creates settings + rclone config)")
     setup.add_argument("--remote-name", help="rclone remote name")

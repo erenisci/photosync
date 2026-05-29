@@ -47,6 +47,7 @@ def test_save_is_valid_json_with_expected_keys(tmp_path: Path) -> None:
         "remote_name",
         "remote_type",
         "target_path",
+        "mode",
         "created_at",
     }
 

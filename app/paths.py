@@ -23,6 +23,10 @@ from pathlib import Path
 DATA_DIRNAME = "data"
 # Subdirectory that holds the bundled rclone binaries.
 BIN_DIRNAME = "bin"
+# Subdirectory holding the user's media to back up. Only files under this folder
+# are scanned and uploaded; other folders on the drive are ignored. This gives
+# the user explicit control over what leaves the drive.
+SOURCE_DIRNAME = "PhotoSync"
 
 # Per-platform rclone binary filenames as produced by scripts/download_rclone.py.
 _RCLONE_BINARIES = {
@@ -58,6 +62,17 @@ def get_data_dir() -> Path:
 def get_bin_dir() -> Path:
     """Return the directory containing the bundled rclone binaries."""
     return get_app_root() / BIN_DIRNAME
+
+
+def get_source_dir() -> Path:
+    """Return the user-content directory, creating it if necessary.
+
+    Only files under this folder are scanned and uploaded by the sync engine.
+    Everything else on the drive is left untouched.
+    """
+    source = get_app_root() / SOURCE_DIRNAME
+    source.mkdir(parents=True, exist_ok=True)
+    return source
 
 
 def get_settings_path() -> Path:

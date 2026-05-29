@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "customtkinter>=5.2",
+    "Pillow>=10.0",
 ]
 
 [project.optional-dependencies]

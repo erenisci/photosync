@@ -6,12 +6,20 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
-from app import sync_engine
+from app import stub, sync_engine
 from app.db import Database
 from app.rclone_client import RcloneError
 
 JPEG = b"\xff\xd8\xff\xe0\x00\x10JFIF"
+
+
+def _real_jpeg(path: Path, size: tuple[int, int] = (800, 600)) -> Path:
+    """Write a Pillow-decodable JPEG (needed for catalog-mode tests)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", size, color=(100, 150, 200)).save(path, format="JPEG", quality=90)
+    return path
 
 
 @pytest.fixture
@@ -125,3 +133,80 @@ def test_scan_cache_avoids_rehash(
     stats = sync_engine.sync(tmp_path, db, FakeRclone(), "r", "Backup")  # type: ignore[arg-type]
     assert stats.skipped == 1
     assert f.exists()
+
+
+# ── Catalog mode ────────────────────────────────────────────────────────
+
+
+def test_catalog_mode_replaces_original_with_stub(tmp_path: Path, db: Database) -> None:
+    src = _real_jpeg(tmp_path / "photo.jpg", size=(1500, 1000))
+    original_size = src.stat().st_size
+
+    stats = sync_engine.sync(
+        tmp_path,
+        db,
+        FakeRclone(),  # type: ignore[arg-type]
+        "myremote",
+        "Backup",
+        mode="catalog",
+    )
+
+    assert stats.uploaded == 1
+    assert src.exists()  # photo stub keeps the same path
+    assert src.stat().st_size < original_size  # actually shrunk
+    info = stub.parse_stub(src)
+    assert info is not None
+    assert info.url == "myremote:Backup/photo.jpg"
+
+
+def test_catalog_mode_skips_existing_stubs(tmp_path: Path, db: Database) -> None:
+    # File on drive is already a stub from a previous catalog sync — even if the
+    # DB doesn't know about it, the EXIF marker should be enough.
+    src = _real_jpeg(tmp_path / "old.jpg")
+    src.write_bytes(stub.make_photo_stub(src, "myremote:Backup/old.jpg"))
+    rclone = FakeRclone()
+
+    stats = sync_engine.sync(
+        tmp_path,
+        db,
+        rclone,
+        "myremote",
+        "Backup",
+        mode="catalog",  # type: ignore[arg-type]
+    )
+
+    assert stats.skipped == 1
+    assert stats.uploaded == 0
+    assert rclone.uploaded == []
+
+
+def test_catalog_mode_writes_index_html(tmp_path: Path, db: Database) -> None:
+    _real_jpeg(tmp_path / "album" / "a.jpg")
+    _real_jpeg(tmp_path / "album" / "b.jpg", size=(900, 700))
+
+    sync_engine.sync(
+        tmp_path,
+        db,
+        FakeRclone(),
+        "r",
+        "Backup",
+        mode="catalog",  # type: ignore[arg-type]
+    )
+
+    folder_index = tmp_path / "album" / "index.html"
+    root_index = tmp_path / "index.html"
+    assert folder_index.is_file()
+    assert root_index.is_file()
+    text = folder_index.read_text(encoding="utf-8")
+    assert "r:Backup/album/a.jpg" in text
+    assert "r:Backup/album/b.jpg" in text
+
+
+def test_backup_mode_leaves_originals_alone(tmp_path: Path, db: Database) -> None:
+    src = _real_jpeg(tmp_path / "p.jpg", size=(1200, 900))
+    original_size = src.stat().st_size
+
+    sync_engine.sync(tmp_path, db, FakeRclone(), "r", "B")  # type: ignore[arg-type]
+
+    assert src.stat().st_size == original_size  # untouched
+    assert stub.parse_stub(src) is None  # not a stub

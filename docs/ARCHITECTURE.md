@@ -1,22 +1,27 @@
 # PhotoSync Architecture
 
 PhotoSync is a portable application that runs from a USB flash drive and uploads
-the drive's photos and videos to a chosen cloud provider, skipping anything that
-has already been uploaded. File transfer is delegated to
+the contents of the drive's `PhotoSync/` folder to a chosen cloud provider,
+skipping anything that has already been uploaded. File transfer is delegated to
 [rclone](https://rclone.org/); PhotoSync orchestrates scanning, hashing,
-deduplication, and the user interface.
+deduplication, optional thumbnail-stub generation, and the user interface.
 
 ## Goals & non-goals
 
 **In scope**
 
+- Selective sync: only files under the drive's `PhotoSync/` folder are touched.
+- Two sync modes:
+  - **Backup** — uploads copies, originals stay on the drive.
+  - **Catalog** — after upload, replace the original with a thumbnail-with-URL
+    stub and (re)generate a clickable HTML gallery per folder.
 - Scan photo/video files (extension whitelist + magic-byte check).
-- Compute SHA-256 hashes with a local scan cache.
-- Deduplicate against a local SQLite history and the remote.
-- Support Google Drive, Dropbox, OneDrive, and S3-compatible stores (B2, R2, …).
+- SHA-256 hashing with a local scan cache.
+- Deduplication against a local SQLite history.
+- Providers: Google Drive, Dropbox, OneDrive, S3-compatible (B2, R2, …).
 - First-run setup wizard, per-file progress, master-password-encrypted creds.
-- Cross-platform: Windows, macOS, Linux. Single binary (<50 MB).
-- Resume after interrupted network transfers.
+- Cross-platform: Windows, macOS, Linux. Single binary (~55 MB).
+- Resume after interrupted network transfers (rclone behaviour).
 
 **Out of scope (at least for MVP)**
 
@@ -24,6 +29,7 @@ deduplication, and the user interface.
 - Perceptual / near-duplicate detection.
 - Two-way sync or cloud → drive download.
 - Fan-out to multiple clouds at once.
+- Cancellation mid-sync.
 
 ## Technology choices
 
@@ -50,20 +56,22 @@ battle-tested.
 ```
 photosync/
 ├── app/
-│   ├── main.py            # Entry point: wizard vs. password prompt vs. main window
-│   ├── paths.py           # USB root / bundle resolution, rclone binary lookup
-│   ├── config.py          # settings.json read/write
+│   ├── main.py            # Entry point + CLI; routes to wizard / main window
+│   ├── paths.py           # Bundle root + source folder + rclone binary lookup
+│   ├── config.py          # settings.json read/write (incl. SyncMode)
 │   ├── db.py              # SQLite operations (uploads + scan_cache)
-│   ├── hasher.py          # SHA-256 chunked hashing            [Phase 1]
-│   ├── scanner.py         # Media file discovery               [Phase 1]
-│   ├── rclone_client.py   # rclone subprocess wrapper          [Phase 1]
-│   ├── sync_engine.py     # Core sync orchestrator             [Phase 1]
-│   ├── providers/         # Per-provider setup (OAuth / S3)    [Phase 3]
-│   └── ui/                # CustomTkinter wizard & main window [Phase 2]
-├── bin/                   # Bundled rclone binaries (gitignored; fetched by script)
+│   ├── hasher.py          # SHA-256 chunked hashing
+│   ├── scanner.py         # Media file discovery
+│   ├── rclone_client.py   # rclone subprocess wrapper
+│   ├── stub.py            # Catalog-mode thumbnail-with-URL stub generation
+│   ├── catalog.py         # Per-folder index.html gallery generation
+│   ├── sync_engine.py     # Core orchestrator (backup + catalog modes)
+│   ├── providers/         # Per-provider setup (OAuth / S3)
+│   └── ui/                # CustomTkinter wizard, main window, password prompt
+├── bin/                   # Bundled rclone binary (gitignored; fetched by script)
 ├── scripts/
 │   ├── download_rclone.py # Fetch + checksum rclone binaries
-│   └── build.py           # PyInstaller wrapper, per-OS build  [Phase 4]
+│   └── build.py           # PyInstaller wrapper, per-OS build
 ├── tests/
 └── docs/
 ```
@@ -75,15 +83,31 @@ What the user copies onto the flash drive:
 ```
 USB_DRIVE/
 ├── PhotoSync(.exe)        # PyInstaller bundle for the platform
-├── bin/                   # rclone.exe / rclone-mac / rclone-linux
-├── data/                  # created on first run
-│   ├── rclone.conf        # written encrypted by rclone
-│   ├── settings.json      # app settings (remote choice, target path)
-│   └── sync.db            # SQLite upload history + scan cache
-└── README.txt
+├── PhotoSync/             # ← user content goes here; only this is synced
+│   ├── 2024-Trip/
+│   │   ├── IMG_0001.jpg
+│   │   └── ...
+│   └── ...
+└── data/                  # created on first run
+    ├── rclone.conf        # written encrypted by rclone
+    ├── settings.json      # remote, target path, sync mode
+    └── sync.db            # SQLite upload history + scan cache
 ```
 
-`data/` is created on first run, so the release zip stays minimal.
+`PhotoSync/` and `data/` are created automatically. Anything else on the drive
+is ignored — users can keep unrelated files alongside without them being
+uploaded.
+
+After a catalog-mode sync the `PhotoSync/` tree looks like:
+
+```
+PhotoSync/
+├── 2024-Trip/
+│   ├── IMG_0001.jpg          # 1024px thumbnail w/ cloud URL in EXIF
+│   ├── clip.mp4.preview.jpg  # video frame stub (ffmpeg-extracted or placeholder)
+│   └── index.html            # clickable gallery
+└── index.html                # top-level catalog
+```
 
 ## Module responsibilities
 
@@ -149,11 +173,44 @@ is passed via the `RCLONE_CONFIG_PASS` environment variable and cleared afterwar
 | Upload one file     | `rclone copyto <local> <remote>:<path> --progress --stats-one-line` |
 | Connection test     | `rclone lsd <remote>:`                                              |
 
-### `sync_engine.py` _(Phase 1)_
+### `sync_engine.py`
 
 For each scanned file: look up the cached hash (or compute + cache it), check
 `uploads` — skip if present, otherwise `copyto` and record on success. MVP runs
 serially; a worker pool is a v1.1 item.
+
+In **catalog mode**, after a successful upload the engine calls
+`stub.write_stub()` to atomically replace the original with a thumbnail-with-URL
+JPEG, then records the *stub's* hash in `uploads` so the next scan recognises
+it as already-synced. As an extra safety net, before hashing each file the
+engine asks `stub.is_stub()` — files that already carry our EXIF marker are
+skipped even if the SQLite DB has been wiped. At the end of a catalog sync
+the engine walks the source dir once, collects every stub it finds, and asks
+`catalog.regenerate()` to write the per-folder and root `index.html` files.
+
+### `stub.py`
+
+Catalog-mode stub generation, built on Pillow.
+
+- **Photos** keep their original path. The file is replaced with a JPEG
+  thumbnail (default 1024 px longest edge, quality 85) carrying our magic
+  marker `PHOTOSYNC_STUB_V1` and the cloud URL in the EXIF `UserComment` tag
+  (`0x9286`).
+- **Videos** are renamed to `<original>.preview.jpg` and the original is
+  deleted — file explorers can't pretend a JPEG is a video, so changing the
+  extension is honest. A representative frame is extracted with a bundled
+  `ffmpeg` if present, otherwise a generic "Video" placeholder is drawn.
+- `parse_stub(path)` returns the URL + original name for any of our stubs and
+  `None` for everything else. The check reads only EXIF, not the whole file.
+
+### `catalog.py`
+
+Static HTML gallery generation. No JS, single `<style>` block, escapes all
+user-controlled text. For each folder of stubs it writes an `index.html`
+listing `<a href="cloud-url"><img src="thumb"></a>` cards in a responsive grid;
+the source root gets a top-level `index.html` linking to every sub-folder's
+gallery. Opening the HTML offline still shows the thumbnails; clicking a tile
+opens the cloud URL in the browser, which gives you the full-resolution file.
 
 ### `providers/` _(Phase 3)_
 

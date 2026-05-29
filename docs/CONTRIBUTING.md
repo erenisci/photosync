@@ -51,12 +51,16 @@ pytest              # tests
 - **Tests use `tmp_path`** and monkeypatch `paths.*` rather than touching real
   drive locations. Keep tests hermetic and fast.
 
-## Phased development
+## Scope
 
-Development proceeds one phase at a time (see
-[ARCHITECTURE.md](ARCHITECTURE.md#development-roadmap)). Please keep pull requests
-scoped to a single phase or a coherent slice of one, so they can be reviewed
-without bugs piling up. Phase 0 (scaffolding) is complete.
+The MVP is complete. Future work should be sliced into focused PRs (one
+feature/fix per PR). See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map
+and [docs/PROGRESS.md](PROGRESS.md) (internal) for the v1.1 backlog.
+
+When extending catalog mode, remember the safety invariant: **upload first,
+then replace the original**. Anything that touches `app/stub.py` or the
+catalog branch of `app/sync_engine.py` must preserve "no data loss on upload
+failure" as a hard property and ship with a test that verifies it.
 
 ## Project conventions for issues
 

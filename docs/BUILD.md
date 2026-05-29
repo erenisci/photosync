@@ -69,12 +69,19 @@ You can test directly from source on a USB flash drive:
 # 1. Download rclone for your OS
 python scripts/download_rclone.py --target windows
 
-# 2. Run with GUI
+# 2. Create a PhotoSync/ folder with some media — only this folder is synced
+mkdir PhotoSync
+cp /some/photos/*.jpg PhotoSync/
+
+# 3. Run with GUI (first launch shows the setup wizard)
 python -m app
 
-# 3. Or run in CLI mode (no GUI needed)
-python -m app --cli --password <pw> --scan-root E:\
+# 4. Or run in CLI mode
+python -m app --cli --password <pw> --scan-root E:\PhotoSync --mode catalog
 ```
+
+The `--mode` flag toggles between `backup` (keep originals; default) and
+`catalog` (replace with thumbnail + URL stub, write index.html galleries).
 
 ## Cross-platform builds
 

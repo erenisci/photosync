@@ -14,11 +14,12 @@ from __future__ import annotations
 
 import json
 import threading
+from typing import cast
 
 import customtkinter as ctk
 
 from app import paths
-from app.config import Settings, save_settings
+from app.config import Settings, SyncMode, save_settings
 from app.providers import ALL_PROVIDERS
 from app.providers.base import CloudProvider, OAuthProvider
 from app.providers.s3_compatible import PRESETS, S3Compatible
@@ -43,19 +44,21 @@ class WizardApp(ctk.CTk):
         self._selected_provider: CloudProvider | None = None
         self._token_json: str | None = None
         self._rclone_params: dict[str, str] = {}
+        self._mode: str = "backup"
+        self._target_path: str = ""
 
         self._container = ctk.CTkFrame(self)
         self._container.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._show_step1()
 
-    # ── Step 1 — Provider selection ────────────────────────────────────
+    # ── Step 1 — Provider + mode selection ─────────────────────────────
 
     def _show_step1(self) -> None:
         self._clear()
         ctk.CTkLabel(
             self._container, text="Choose your cloud provider", font=("", 18, "bold")
-        ).pack(pady=(16, 12))
+        ).pack(pady=(16, 8))
 
         self._provider_var = ctk.StringVar(value="")
         for provider in ALL_PROVIDERS:
@@ -64,9 +67,36 @@ class WizardApp(ctk.CTk):
                 text=provider.name,
                 variable=self._provider_var,
                 value=provider.name,
-            ).pack(anchor="w", padx=_PAD_X, pady=4)
+            ).pack(anchor="w", padx=_PAD_X, pady=2)
 
-        ctk.CTkButton(self._container, text="Next →", command=self._step1_next).pack(pady=(20, 8))
+        ctk.CTkLabel(self._container, text="Sync mode", font=("", 14, "bold")).pack(pady=(14, 4))
+
+        self._mode_var = ctk.StringVar(value="backup")
+        ctk.CTkRadioButton(
+            self._container,
+            text="Backup — keep originals on the drive",
+            variable=self._mode_var,
+            value="backup",
+        ).pack(anchor="w", padx=_PAD_X, pady=2)
+        ctk.CTkRadioButton(
+            self._container,
+            text="Catalog — replace uploaded files with thumbnail + cloud link",
+            variable=self._mode_var,
+            value="catalog",
+        ).pack(anchor="w", padx=_PAD_X, pady=2)
+
+        ctk.CTkLabel(
+            self._container,
+            text=(
+                "Catalog mode frees flash space but replaces originals with thumbnails.\n"
+                "Only files inside the PhotoSync/ folder on the drive are synced."
+            ),
+            text_color="gray",
+            font=("", 11),
+            justify="center",
+        ).pack(pady=(2, 6))
+
+        ctk.CTkButton(self._container, text="Next →", command=self._step1_next).pack(pady=(8, 8))
 
     def _step1_next(self) -> None:
         name = self._provider_var.get()
@@ -76,6 +106,7 @@ class WizardApp(ctk.CTk):
                 break
         if self._selected_provider is None:
             return  # nothing selected
+        self._mode = self._mode_var.get()
         if isinstance(self._selected_provider, S3Compatible):
             self._show_step2_s3()
         else:
@@ -299,6 +330,7 @@ class WizardApp(ctk.CTk):
                 remote_name=remote_name,
                 remote_type=self._selected_provider.rclone_type,
                 target_path=self._target_path,
+                mode=cast(SyncMode, self._mode),
             )
             save_settings(self.settings)
             self._pw_status.set_ok("Done!")

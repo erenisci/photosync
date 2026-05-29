@@ -91,12 +91,13 @@ class MainWindow(ctk.CTk):
         )
         with Database() as db:
             stats = sync(
-                root=paths.get_app_root(),
+                root=paths.get_source_dir(),
                 db=db,
                 rclone=rclone,
                 remote=self._settings.remote_name,
                 target_path=self._settings.target_path,
                 on_event=self._on_event,
+                mode=self._settings.mode,
             )
         self.after(0, lambda: self._on_complete(stats))
 

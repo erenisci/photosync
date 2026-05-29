@@ -13,12 +13,19 @@ import json
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from app import paths
 
 # Current schema version. Bump when the on-disk shape changes and add migration
 # handling in ``Settings.from_dict``.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+# Sync modes:
+#   "backup"  — keep originals on the drive, upload copies to the cloud.
+#   "catalog" — after upload, replace the original with a thumbnail-with-URL stub.
+SyncMode = Literal["backup", "catalog"]
+VALID_MODES: tuple[SyncMode, ...] = ("backup", "catalog")
 
 
 def _utcnow_iso() -> str:
@@ -33,6 +40,7 @@ class Settings:
     remote_name: str
     remote_type: str
     target_path: str
+    mode: SyncMode = "backup"
     version: int = SCHEMA_VERSION
     created_at: str = field(default_factory=_utcnow_iso)
 
@@ -60,10 +68,17 @@ class Settings:
         if missing:
             raise ValueError(f"settings.json is missing required field(s): {missing}")
 
+        mode_raw = str(data.get("mode", "backup"))
+        if mode_raw not in VALID_MODES:
+            raise ValueError(
+                f"settings.json has invalid mode {mode_raw!r}; must be one of {VALID_MODES}"
+            )
+
         return cls(
             remote_name=str(data["remote_name"]),
             remote_type=str(data["remote_type"]),
             target_path=str(data["target_path"]),
+            mode=mode_raw,
             version=version,
             created_at=str(data.get("created_at") or _utcnow_iso()),
         )

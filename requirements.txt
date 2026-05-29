@@ -1,3 +1,4 @@
 # Runtime dependencies (mirrors [project.dependencies] in pyproject.toml).
 # For development, prefer:  pip install -e ".[dev]"
 customtkinter>=5.2
+Pillow>=10.0
