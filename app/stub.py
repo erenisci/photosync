@@ -31,7 +31,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from PIL.ExifTags import TAGS
 
 from app import paths, scanner
@@ -105,7 +105,7 @@ def parse_stub(path: Path) -> StubInfo | None:
     try:
         with Image.open(path) as img:
             exif = img.getexif()
-    except (OSError, Image.UnidentifiedImageError):  # type: ignore[attr-defined]
+    except (OSError, UnidentifiedImageError):
         return None
 
     # UserComment is EXIF tag 0x9286 (37510).

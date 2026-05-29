@@ -181,7 +181,7 @@ serially; a worker pool is a v1.1 item.
 
 In **catalog mode**, after a successful upload the engine calls
 `stub.write_stub()` to atomically replace the original with a thumbnail-with-URL
-JPEG, then records the *stub's* hash in `uploads` so the next scan recognises
+JPEG, then records the _stub's_ hash in `uploads` so the next scan recognises
 it as already-synced. As an extra safety net, before hashing each file the
 engine asks `stub.is_stub()` — files that already carry our EXIF marker are
 skipped even if the SQLite DB has been wiped. At the end of a catalog sync
@@ -212,12 +212,16 @@ the source root gets a top-level `index.html` linking to every sub-folder's
 gallery. Opening the HTML offline still shows the thumbnails; clicking a tile
 opens the cloud URL in the browser, which gives you the full-resolution file.
 
-### `providers/` _(Phase 3)_
+### `providers/`
 
-Each provider implements a `CloudProvider` interface (`setup_interactive()`,
+Each provider implements the `CloudProvider` interface (`setup_params()` +
 `get_target_path_label()`). OAuth providers shell out to `rclone authorize`;
 S3-compatible providers collect endpoint/keys/region/bucket with presets for
 B2, R2, and Wasabi.
+
+The wizard ships with Google Drive, Dropbox, OneDrive, and S3-compatible. Any
+of rclone's [70+ backends](https://rclone.org/overview/) can be added in ~10
+lines — see [CONTRIBUTING.md → Adding a cloud provider](CONTRIBUTING.md#adding-a-cloud-provider).
 
 ### `ui/` _(Phase 2)_
 

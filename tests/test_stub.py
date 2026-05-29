@@ -41,7 +41,8 @@ def test_photo_stub_thumbnail_dimensions(tmp_path: Path) -> None:
     out = tmp_path / "out.jpg"
     out.write_bytes(stub_bytes)
     with Image.open(out) as img:
-        assert max(img.size) == 512  # thumbnail() preserves aspect, longest edge
+        # thumbnail() preserves aspect, longest edge
+        assert max(img.size) == 512
 
 
 def test_parse_stub_returns_none_for_plain_jpeg(tmp_path: Path) -> None:

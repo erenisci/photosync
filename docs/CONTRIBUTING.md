@@ -54,13 +54,68 @@ pytest              # tests
 ## Scope
 
 The MVP is complete. Future work should be sliced into focused PRs (one
-feature/fix per PR). See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map
-and [docs/PROGRESS.md](PROGRESS.md) (internal) for the v1.1 backlog.
+feature/fix per PR). See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map.
 
 When extending catalog mode, remember the safety invariant: **upload first,
 then replace the original**. Anything that touches `app/stub.py` or the
 catalog branch of `app/sync_engine.py` must preserve "no data loss on upload
 failure" as a hard property and ship with a test that verifies it.
+
+## Adding a cloud provider
+
+rclone supports [70+ providers](https://rclone.org/overview/); PhotoSync ships
+with four of them in the wizard. Adding another one is intentionally cheap.
+
+### OAuth providers (Box, pCloud, Mega, Yandex, …)
+
+If the provider uses `rclone authorize <type>`:
+
+1. Create `app/providers/<name>.py`:
+
+   ```python
+   from __future__ import annotations
+
+   from app.providers.base import OAuthProvider
+
+
+   class Box(OAuthProvider):
+       def __init__(self) -> None:
+           super().__init__(name="Box", rclone_type="box")
+   ```
+
+2. Register it in `app/providers/__init__.py`:
+
+   ```python
+   from app.providers.box import Box
+
+   ALL_PROVIDERS: list[CloudProvider] = [
+       GoogleDrive(),
+       Dropbox(),
+       OneDrive(),
+       Box(),            # ← add here
+       S3Compatible(),
+   ]
+   ```
+
+3. Add `Box` to the `__all__` list.
+
+That's it — the wizard picks it up automatically, the OAuth flow goes through
+`rclone authorize box`, and the rest of the pipeline is shared.
+
+### Non-OAuth / custom providers
+
+If the provider takes credentials directly (like S3) rather than an OAuth flow,
+subclass `CloudProvider` instead of `OAuthProvider` and implement
+`setup_params()` and `get_target_path_label()`. Look at
+[`app/providers/s3_compatible.py`](../app/providers/s3_compatible.py) as a
+worked example — it handles a credentials form and presets for popular S3
+services. The wizard already has a generic credentials screen pattern that
+can be reused.
+
+### Tests
+
+Add at least one entry to `tests/test_providers.py` checking that
+`setup_params()` returns the expected rclone config keys for your provider.
 
 ## Project conventions for issues
 

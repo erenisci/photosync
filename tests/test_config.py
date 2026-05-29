@@ -7,13 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from app.config import (
-    SCHEMA_VERSION,
-    Settings,
-    load_settings,
-    save_settings,
-    settings_exist,
-)
+from app.config import SCHEMA_VERSION, Settings, load_settings, save_settings, settings_exist
 
 
 def _sample() -> Settings:
