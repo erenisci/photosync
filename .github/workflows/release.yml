@@ -14,7 +14,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: windows-latest
+            asset_name: PhotoSync-windows.exe
+            built_name: PhotoSync.exe
+          - os: ubuntu-latest
+            asset_name: PhotoSync-linux
+            built_name: PhotoSync
+          - os: macos-latest
+            asset_name: PhotoSync-macos
+            built_name: PhotoSync
 
     steps:
       - uses: actions/checkout@v4
@@ -27,14 +36,20 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
+      # `--skip-package` builds the bare PyInstaller binary but doesn't wrap
+      # it in a zip — distribution is intentionally a single file.
       - name: Build executable
-        run: python scripts/build.py
+        run: python scripts/build.py --skip-package
 
-      - name: Upload release artifact
+      - name: Rename binary for the release asset
+        shell: bash
+        run: mv "dist/${{ matrix.built_name }}" "dist/${{ matrix.asset_name }}"
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.os }}
-          path: dist/PhotoSync-*.zip
+          name: ${{ matrix.asset_name }}
+          path: dist/${{ matrix.asset_name }}
 
   publish:
     name: Create GitHub Release
@@ -49,5 +64,23 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/PhotoSync-*.zip
+          files: artifacts/PhotoSync-*
           generate_release_notes: true
+          body: |
+            ## PhotoSync ${{ github.ref_name }}
+
+            **Single binary, no installer.** Download the file for your OS and
+            drop it on a USB flash drive — that's the whole install.
+
+            | OS      | File                  |
+            | ------- | --------------------- |
+            | Windows | `PhotoSync-windows.exe` |
+            | macOS   | `PhotoSync-macos`     |
+            | Linux   | `PhotoSync-linux`     |
+
+            Bundled rclone v1.74.2 is embedded inside the binary — nothing
+            extra to copy. First launch creates a `PhotoSync/` folder next
+            to the executable; drop your photos there and press Start.
+
+            See the [README](https://github.com/erenisci/photosync#readme) for
+            the full walkthrough.
