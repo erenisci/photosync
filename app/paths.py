@@ -15,8 +15,10 @@ Two execution modes are supported:
 
 from __future__ import annotations
 
+import os
 import platform
 import sys
+import tempfile
 from pathlib import Path
 
 # Subdirectory (relative to the USB / project root) that holds runtime state.
@@ -109,3 +111,26 @@ def get_rclone_binary() -> Path:
             f"rclone binary not found at {binary}. Run scripts/download_rclone.py to fetch it."
         )
     return binary
+
+
+def atomic_write_bytes(path: Path, data: bytes) -> None:
+    """Atomically write ``data`` to ``path``.
+
+    Uses :func:`tempfile.mkstemp` so two concurrent runs against the same drive
+    can never race on the same ``.tmp`` filename, then :meth:`Path.replace` to
+    swap the file into place in one filesystem operation.
+    """
+    fd, tmp_name = tempfile.mkstemp(prefix=".photosync-", suffix=".tmp", dir=str(path.parent))
+    tmp = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+        tmp.replace(path)
+    except OSError:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def atomic_write_text(path: Path, text: str, encoding: str = "utf-8") -> None:
+    """Atomically write ``text`` to ``path``. See :func:`atomic_write_bytes`."""
+    atomic_write_bytes(path, text.encode(encoding))

@@ -8,7 +8,6 @@ password by rclone itself.
 
 from __future__ import annotations
 
-import contextlib
 import json
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -113,13 +112,15 @@ def load_settings(path: Path | None = None) -> Settings:
 
 
 def save_settings(settings: Settings, path: Path | None = None) -> None:
-    """Write settings to disk atomically (temp file + replace)."""
+    """Write settings to disk atomically (temp file + replace).
+
+    ``tempfile.mkstemp`` (used inside :func:`paths.atomic_write_text`) creates
+    the temp file with mode ``0o600`` on POSIX, and ``Path.replace`` preserves
+    those permissions on the final file. No explicit chmod is needed, and
+    skipping it removes a brief window where the file existed with broader
+    permissions between replace and chmod.
+    """
     path = path or paths.get_settings_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-
     payload = json.dumps(settings.to_dict(), indent=2, ensure_ascii=False)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(payload, encoding="utf-8")
-    with contextlib.suppress(OSError):
-        tmp.chmod(0o600)  # owner-only on Unix; no-op on FAT32/exFAT
-    tmp.replace(path)
+    paths.atomic_write_text(path, payload)

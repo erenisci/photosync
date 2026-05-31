@@ -32,7 +32,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
-from PIL.ExifTags import TAGS
 
 from app import paths, scanner
 
@@ -120,9 +119,16 @@ def parse_stub(path: Path) -> StubInfo | None:
     decoded = _decode_usercomment(raw)
     if decoded is None:
         return None
+    # EXIF UserComment is attacker-controlled. Cap the payload size and guard
+    # against deeply nested JSON / non-dict shapes so a malicious JPEG can't
+    # break the catalog rebuild loop with RecursionError or AttributeError.
+    if len(decoded) > 65536:
+        return None
     try:
         data = json.loads(decoded)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, RecursionError, ValueError):
+        return None
+    if not isinstance(data, dict):
         return None
     url = data.get("url")
     if not isinstance(url, str):
@@ -174,13 +180,17 @@ def _extract_video_frame(source: Path, ffmpeg: Path, max_size: int) -> Image.Ima
             f"scale='min({max_size},iw)':-2",
             str(tmp_path),
         ]
-        result = subprocess.run(  # noqa: S603 — bundled binary, arg list, shell=False
-            cmd,
-            capture_output=True,
-            shell=False,
-            check=False,
-            timeout=30,
-        )
+        try:
+            result = subprocess.run(  # noqa: S603 — bundled binary, arg list, shell=False
+                cmd,
+                capture_output=True,
+                shell=False,
+                check=False,
+                timeout=30,
+            )
+        except subprocess.TimeoutExpired:
+            logger.warning("ffmpeg timed out for %s", source)
+            return None
         if result.returncode != 0 or not tmp_path.is_file() or tmp_path.stat().st_size == 0:
             logger.warning("ffmpeg failed for %s: %s", source, result.stderr.decode("replace"))
             return None
@@ -261,19 +271,18 @@ def write_stub(source: Path, url: str, *, max_size: int = DEFAULT_THUMB_SIZE) ->
         raise ValueError(f"Unsupported file type for stub: {source.suffix}")
 
     dest = stub_destination(source)
-    tmp = dest.with_suffix(dest.suffix + ".tmp")
-    tmp.write_bytes(stub_bytes)
-    tmp.replace(dest)
+    paths.atomic_write_bytes(dest, stub_bytes)
 
-    # For videos: the original (.mp4 etc.) is now stale next to the new
-    # .preview.jpg — delete it so the drive actually frees the space.
+    # For videos the stub lives at a new path (.preview.jpg). The original is
+    # now stale and must go — both so the drive frees the space the user
+    # asked for in catalog mode and so the next scan doesn't keep finding it.
+    # If we can't remove it we must surface the failure; silently leaving an
+    # orphan would betray the catalog-mode contract.
     if dest != source:
         try:
             source.unlink()
         except OSError as exc:
-            logger.warning("Could not remove original video %s: %s", source, exc)
+            raise OSError(
+                f"Stub written to {dest} but could not remove original {source}: {exc}"
+            ) from exc
     return dest
-
-
-# Re-export Exif tag id lookup for tests/debug convenience.
-USER_COMMENT_TAG = next((tid for tid, name in TAGS.items() if name == "UserComment"), 0x9286)

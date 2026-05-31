@@ -2,19 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 from pathlib import Path
 
-import pytest
-
 from app.db import Database
-
-
-@pytest.fixture
-def db(tmp_path: Path) -> Iterator[Database]:
-    database = Database(tmp_path / "sync.db")
-    yield database
-    database.close()
 
 
 def test_is_uploaded_false_then_true(db: Database) -> None:

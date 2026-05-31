@@ -6,8 +6,6 @@ services have built-in presets that fill in the endpoint and provider field.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from app.providers.base import CloudProvider
 
 # Pre-filled endpoint URLs for popular S3-compatible services.
@@ -27,16 +25,8 @@ PRESETS: dict[str, dict[str, str]] = {
 }
 
 
-@dataclass
 class S3Compatible(CloudProvider):
     """S3-compatible object storage."""
-
-    # These are populated by the wizard form or by CLI flags.
-    s3_provider: str = "Other"
-    endpoint: str = ""
-    access_key_id: str = ""
-    secret_access_key: str = ""
-    region: str = ""
 
     def __init__(
         self,

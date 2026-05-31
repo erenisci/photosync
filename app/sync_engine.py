@@ -19,7 +19,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from app import catalog, hasher, scanner, stub
-from app.catalog import CatalogEntry
 from app.config import SyncMode
 from app.db import Database
 from app.rclone_client import RcloneClient, RcloneError
@@ -163,15 +162,15 @@ def sync(
     return stats
 
 
-def _collect_existing_stubs(root: Path) -> list[CatalogEntry]:
+def _collect_existing_stubs(root: Path) -> list[catalog.CatalogEntry]:
     """Walk ``root`` and return a CatalogEntry for every PhotoSync stub found."""
-    entries: list[CatalogEntry] = []
+    entries: list[catalog.CatalogEntry] = []
     for path in scanner.find_media_files(root):
         info = stub.parse_stub(path)
         if info is None:
             continue
         entries.append(
-            CatalogEntry(
+            catalog.CatalogEntry(
                 thumbnail_path=path,
                 cloud_url=info.url,
                 original_name=info.original_name,

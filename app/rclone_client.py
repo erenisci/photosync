@@ -115,7 +115,7 @@ class RcloneClient:
         proc = self._run(["authorize", remote_type])
         match = re.search(r"\{.*\}", proc.stdout, re.DOTALL)
         if match is None:
-            raise RcloneError(0, "no token JSON found in rclone authorize output")
+            raise ValueError("no token JSON found in rclone authorize output")
         parsed: dict[str, object] = json.loads(match.group(0))
         return parsed
 

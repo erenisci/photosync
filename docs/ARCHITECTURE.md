@@ -113,6 +113,12 @@ PhotoSync/
 
 ### `paths.py`
 
+Filesystem roots **and** the shared atomic-write helpers (`atomic_write_bytes`,
+`atomic_write_text`). Every on-disk update — settings, stubs, index galleries
+— funnels through these so the codebase has one well-tested write path: a
+unique `tempfile.mkstemp` (`0o600`, concurrent-safe) followed by
+`Path.replace`. No half-written files on crash, no `.tmp` races on multi-run.
+
 Detects PyInstaller bundles via `sys.frozen`. When frozen, the app root is
 `Path(sys.executable).parent` (the USB root); in development it's the repo root.
 `get_rclone_binary()` returns the correct binary for the current platform.

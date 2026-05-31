@@ -22,15 +22,15 @@ encrypted credentials all live on the drive.
 
 ## Why PhotoSync?
 
-> *"I want my photos in the cloud, but I also want to carry a flash with me
-> that can preview them all — without filling 1 TB of storage on a 64 GB stick."*
+> _"I want my photos in the cloud, but I also want to carry a flash with me
+> that can preview them all — without filling 1 TB of storage on a 64 GB stick."_
 
 That's the problem this tool solves. In **catalog mode**, your originals upload
 to the cloud and are replaced on the drive by small thumbnail-with-URL stubs
 plus a clickable HTML gallery. Online → click any thumbnail, see the
 full-resolution original. Offline → still see every preview, just no full file.
 
-It's *iCloud Photos' "Optimize Storage"* — but on a portable USB stick, with
+It's _iCloud Photos' "Optimize Storage"_ — but on a portable USB stick, with
 the cloud of your choice.
 
 ## Features
@@ -91,19 +91,19 @@ full-resolution original opens from the cloud in a new browser tab.
 
 PhotoSync **uploads first, then replaces**. If an upload fails, the original is
 never touched. Stub recognition is double-layered: SQLite content-hash dedup
-*and* an EXIF marker check — so even a wiped database can't trick the app into
+_and_ an EXIF marker check — so even a wiped database can't trick the app into
 re-uploading or destroying a stub.
 
 ## Supported cloud providers
 
 The wizard ships with four ready-to-pick providers:
 
-| Provider          | Auth          | Notes                              |
-| ----------------- | ------------- | ---------------------------------- |
-| Google Drive      | OAuth browser | 15 GB free                         |
-| Dropbox           | OAuth browser | 2 GB free                          |
-| OneDrive          | OAuth browser | 5 GB free                          |
-| S3-compatible     | Access keys   | Presets: B2, R2, Wasabi, or custom |
+| Provider      | Auth          | Notes                              |
+| ------------- | ------------- | ---------------------------------- |
+| Google Drive  | OAuth browser | 15 GB free                         |
+| Dropbox       | OAuth browser | 2 GB free                          |
+| OneDrive      | OAuth browser | 5 GB free                          |
+| S3-compatible | Access keys   | Presets: B2, R2, Wasabi, or custom |
 
 Under the hood PhotoSync uses [rclone](https://rclone.org/), which supports
 [70+ providers](https://rclone.org/overview/) (Box, pCloud, Mega, Storj,

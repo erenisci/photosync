@@ -2,31 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from PIL import Image
 
 from app import stub, sync_engine
 from app.db import Database
 from app.rclone_client import RcloneError
+from tests.conftest import make_jpeg as _real_jpeg
 
 JPEG = b"\xff\xd8\xff\xe0\x00\x10JFIF"
-
-
-def _real_jpeg(path: Path, size: tuple[int, int] = (800, 600)) -> Path:
-    """Write a Pillow-decodable JPEG (needed for catalog-mode tests)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    Image.new("RGB", size, color=(100, 150, 200)).save(path, format="JPEG", quality=90)
-    return path
-
-
-@pytest.fixture
-def db(tmp_path: Path) -> Iterator[Database]:
-    database = Database(tmp_path / "sync.db")
-    yield database
-    database.close()
 
 
 class FakeRclone:
@@ -65,7 +50,8 @@ def test_uploads_new_files(tmp_path: Path, db: Database) -> None:
 def test_skips_already_uploaded_by_hash(tmp_path: Path, db: Database) -> None:
     _media(tmp_path, "a.jpg")
     rclone = FakeRclone()
-    sync_engine.sync(tmp_path, db, rclone, "r", "Backup")  # type: ignore[arg-type]
+    # type: ignore[arg-type]
+    sync_engine.sync(tmp_path, db, rclone, "r", "Backup")
 
     # Second run: same content -> recorded as uploaded -> skipped.
     rclone2 = FakeRclone()

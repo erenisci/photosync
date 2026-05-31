@@ -17,6 +17,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.paths import atomic_write_text
+
 logger = logging.getLogger(__name__)
 
 INDEX_FILENAME = "index.html"
@@ -100,7 +102,9 @@ def write_folder_index(folder: Path, entries: list[CatalogEntry]) -> Path:
                 rel = entry.thumbnail_path.name
             url = html.escape(entry.cloud_url, quote=True)
             src = html.escape(rel, quote=True)
-            name = html.escape(entry.original_name)
+            # quote=True so a filename containing `"` can't break out of the
+            # title="…" / alt="…" attributes and inject HTML.
+            name = html.escape(entry.original_name, quote=True)
             rows.append(
                 f'<a href="{url}" target="_blank" rel="noopener" title="{name}">'
                 f'<img src="{src}" alt="{name}" loading="lazy">'
@@ -110,7 +114,7 @@ def write_folder_index(folder: Path, entries: list[CatalogEntry]) -> Path:
         body = '<div class="gallery">\n' + "\n".join(rows) + "\n</div>"
 
     index_path = folder / INDEX_FILENAME
-    index_path.write_text(_page(title, subtitle, body), encoding="utf-8")
+    atomic_write_text(index_path, _page(title, subtitle, body))
     return index_path
 
 
@@ -129,11 +133,14 @@ def write_root_index(root: Path, folders: list[Path]) -> Path:
                 rel = (sub / INDEX_FILENAME).relative_to(root).as_posix()
             except ValueError:
                 rel = f"{sub.name}/{INDEX_FILENAME}"
-            rows.append(f'<a href="{html.escape(rel, quote=True)}">📁 {html.escape(sub.name)}</a>')
+            rows.append(
+                f'<a href="{html.escape(rel, quote=True)}">'
+                f"📁 {html.escape(sub.name, quote=True)}</a>"
+            )
         body = '<div class="folders">\n' + "\n".join(rows) + "\n</div>"
 
     index_path = root / INDEX_FILENAME
-    index_path.write_text(_page(title, subtitle, body), encoding="utf-8")
+    atomic_write_text(index_path, _page(title, subtitle, body))
     return index_path
 
 

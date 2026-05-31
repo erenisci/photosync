@@ -14,11 +14,11 @@ so we run with ``PRAGMA synchronous = NORMAL`` (never ``FULL``).
 from __future__ import annotations
 
 import sqlite3
-from datetime import UTC, datetime
 from pathlib import Path
 from types import TracebackType
 
 from app import paths
+from app.config import _utcnow_iso
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS uploads (
@@ -39,10 +39,6 @@ CREATE TABLE IF NOT EXISTS scan_cache (
     cached_at     TEXT NOT NULL
 );
 """
-
-
-def _utcnow_iso() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 class Database:

@@ -8,13 +8,7 @@ import pytest
 from PIL import Image
 
 from app import scanner, stub
-
-
-def _make_photo(path: Path, size: tuple[int, int] = (2000, 1500)) -> Path:
-    img = Image.new("RGB", size, color=(50, 120, 200))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(path, format="JPEG", quality=90)
-    return path
+from tests.conftest import make_jpeg as _make_photo
 
 
 def test_photo_stub_roundtrip(tmp_path: Path) -> None:
