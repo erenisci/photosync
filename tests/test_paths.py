@@ -52,3 +52,24 @@ def test_get_rclone_binary_unsupported_platform(
     monkeypatch.setattr("platform.system", lambda: "Plan9")
     with pytest.raises(RuntimeError):
         paths.get_rclone_binary()
+
+
+def test_get_bin_dir_uses_meipass_when_frozen(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # PyInstaller --onefile extracts bundled data to sys._MEIPASS, not next to
+    # the executable. Frozen lookups must follow that, otherwise a single-file
+    # release breaks because no bin/ exists alongside PhotoSync.exe.
+    meipass = tmp_path / "_MEIxxxxx"
+    meipass.mkdir()
+    monkeypatch.setattr(paths, "is_frozen", lambda: True)
+    monkeypatch.setattr("sys._MEIPASS", str(meipass), raising=False)
+    assert paths.get_bin_dir() == meipass / paths.BIN_DIRNAME
+
+
+def test_get_bin_dir_falls_back_to_app_root_in_dev(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(paths, "is_frozen", lambda: False)
+    monkeypatch.setattr(paths, "get_app_root", lambda: tmp_path)
+    assert paths.get_bin_dir() == tmp_path / paths.BIN_DIRNAME

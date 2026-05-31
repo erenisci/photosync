@@ -62,7 +62,18 @@ def get_data_dir() -> Path:
 
 
 def get_bin_dir() -> Path:
-    """Return the directory containing the bundled rclone binaries."""
+    """Return the directory containing the bundled rclone binaries.
+
+    PyInstaller ``--onefile`` extracts bundled data to a per-run temp directory
+    exposed via ``sys._MEIPASS`` — the executable itself is a single file with
+    nothing next to it. We check there first when frozen so a clean install
+    (just ``PhotoSync.exe`` on the drive) works without the user copying
+    anything else. In development we fall back to the repo's ``bin/`` folder.
+    """
+    if is_frozen():
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass is not None:
+            return Path(meipass) / BIN_DIRNAME
     return get_app_root() / BIN_DIRNAME
 
 
