@@ -7,7 +7,7 @@
 [![CI](https://github.com/erenisci/photosync/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-80%20passing-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-82%20passing-success.svg)](tests/)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-success.svg)](pyproject.toml)
 
 </div>
@@ -55,17 +55,21 @@ the cloud of your choice.
 ## Quick start
 
 1. Download `PhotoSync.exe` (Windows) / `PhotoSync` (macOS/Linux) from the
-   [Releases](../../releases) page.
-2. Drop it onto your flash drive.
-3. Create a `PhotoSync/` folder next to the executable, drop your photos
-   and videos inside.
-4. Double-click `PhotoSync`. The setup wizard runs on first launch:
+   [Releases](../../releases) page. **That's the only file you need to copy
+   to the flash drive** — rclone is bundled inside.
+2. Double-click `PhotoSync`. The setup wizard runs on first launch:
    - Pick a cloud provider and a sync mode.
    - Authenticate (browser OAuth or S3 keys).
    - Choose a target folder name on the cloud side.
    - Set a master password — this encrypts your cloud credentials.
-5. Press **Start**. Watch the progress; when it finishes, double-click the
+3. PhotoSync auto-creates a `PhotoSync/` folder on the drive and opens it
+   in your file manager. **Drop your photos and videos there.**
+4. Press **Start**. Watch the progress; when it finishes, double-click
    `PhotoSync/index.html` to browse your catalog.
+
+> Runtime state (settings, database, encrypted credentials) lives in a
+> hidden `data/` folder PhotoSync creates next to the executable. Show
+> hidden items in your file manager if you want to see it.
 
 ## How catalog mode works
 
@@ -140,11 +144,11 @@ pip install -e ".[dev]"
 ruff check .       # lint
 ruff format .      # auto-format
 mypy               # type-check (strict)
-pytest             # 80 tests
+pytest             # 82 tests
 python -m app      # run with GUI from source
 ```
 
-The codebase ships with **mypy strict** + **ruff** + **80 pytest tests** all
+The codebase ships with **mypy strict** + **ruff** + **82 pytest tests** all
 passing on every commit (CI: 3-OS matrix). The architecture is documented in
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
