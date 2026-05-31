@@ -1,424 +1,551 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PhotoSync — portable USB-to-cloud photo & video catalog</title>
-<meta name="description" content="PhotoSync — portable USB-to-cloud photo & video catalog with on-drive thumbnail previews. Single binary, 70+ providers, SHA-256 dedup, MIT licensed." />
-<meta property="og:title" content="PhotoSync" />
-<meta property="og:description" content="Portable USB-to-cloud photo catalog. The flash drive is your preview library; the cloud holds the originals." />
-<meta property="og:type" content="website" />
-<style>
-  :root {
-    --bg: #0d0d10;
-    --surface: #16161a;
-    --elevated: #1f1f25;
-    --border: #2a2a32;
-    --text: #f0f0f5;
-    --muted: #9a9aa5;
-    --accent: #7dd3fc;
-    --success: #86efac;
-    --danger: #fca5a5;
-    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    --maxw: 720px;
-  }
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <title>PhotoSync — portable USB-to-cloud photo & video catalog</title>
+    <meta
+      name="description"
+      content="PhotoSync — portable USB-to-cloud photo & video catalog with on-drive thumbnail previews. Single binary, 70+ providers, SHA-256 dedup, MIT licensed."
+    />
+    <meta
+      property="og:title"
+      content="PhotoSync"
+    />
+    <meta
+      property="og:description"
+      content="Portable USB-to-cloud photo catalog. The flash drive is your preview library; the cloud holds the originals."
+    />
+    <meta
+      property="og:type"
+      content="website"
+    />
+    <style>
+      :root {
+        --bg: #0d0d10;
+        --surface: #16161a;
+        --elevated: #1f1f25;
+        --border: #2a2a32;
+        --text: #f0f0f5;
+        --muted: #9a9aa5;
+        --accent: #7dd3fc;
+        --success: #86efac;
+        --danger: #fca5a5;
+        --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        --maxw: 720px;
+      }
 
-  * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
 
-  html { -webkit-text-size-adjust: 100%; }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
 
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 17px;
-    line-height: 1.65;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 17px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
 
-  /* faint radial glow behind the hero, no images required */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(900px 480px at 50% -8%, rgba(125, 211, 252, 0.07), transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
+      /* faint radial glow behind the hero, no images required */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(
+          900px 480px at 50% -8%,
+          rgba(125, 211, 252, 0.07),
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
 
-  .wrap {
-    position: relative;
-    z-index: 1;
-    max-width: var(--maxw);
-    margin: 0 auto;
-    padding: 0 24px;
-  }
+      .wrap {
+        position: relative;
+        z-index: 1;
+        max-width: var(--maxw);
+        margin: 0 auto;
+        padding: 0 24px;
+      }
 
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
 
-  h1, h2, h3 { line-height: 1.2; letter-spacing: -0.02em; }
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+      }
 
-  code, pre, .mono { font-family: var(--mono); }
+      code,
+      pre,
+      .mono {
+        font-family: var(--mono);
+      }
 
-  /* ---------- header / hero ---------- */
-  header {
-    padding: 88px 0 56px;
-    border-bottom: 1px solid var(--border);
-  }
+      /* ---------- header / hero ---------- */
+      header {
+        padding: 88px 0 56px;
+        border-bottom: 1px solid var(--border);
+      }
 
-  .brandmark {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-family: var(--mono);
-    font-size: 13px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 28px;
-  }
-  .brandmark .dot {
-    width: 9px; height: 9px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.12);
-  }
+      .brandmark {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 28px;
+      }
+      .brandmark .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.12);
+      }
 
-  h1 {
-    font-size: clamp(44px, 9vw, 76px);
-    margin: 0 0 20px;
-    font-weight: 700;
-  }
+      h1 {
+        font-size: clamp(44px, 9vw, 76px);
+        margin: 0 0 20px;
+        font-weight: 700;
+      }
 
-  .tagline {
-    font-size: clamp(18px, 3.4vw, 22px);
-    color: var(--muted);
-    max-width: 38ch;
-    margin: 0 0 36px;
-    line-height: 1.5;
-  }
-  .tagline strong { color: var(--text); font-weight: 600; }
+      .tagline {
+        font-size: clamp(18px, 3.4vw, 22px);
+        color: var(--muted);
+        max-width: 38ch;
+        margin: 0 0 36px;
+        line-height: 1.5;
+      }
+      .tagline strong {
+        color: var(--text);
+        font-weight: 600;
+      }
 
-  .cta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 13px 22px;
-    border-radius: 9px;
-    font-weight: 600;
-    font-size: 16px;
-    border: 1px solid var(--border);
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.05s ease;
-  }
-  .btn:hover { text-decoration: none; }
-  .btn:active { transform: translateY(1px); }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 13px 22px;
+        border-radius: 9px;
+        font-weight: 600;
+        font-size: 16px;
+        border: 1px solid var(--border);
+        transition:
+          border-color 0.15s ease,
+          background 0.15s ease,
+          transform 0.05s ease;
+      }
+      .btn:hover {
+        text-decoration: none;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
 
-  .btn-primary {
-    background: var(--accent);
-    color: #06222e;
-    border-color: var(--accent);
-  }
-  .btn-primary:hover { background: #a4e0fd; }
+      .btn-primary {
+        background: var(--accent);
+        color: #06222e;
+        border-color: var(--accent);
+      }
+      .btn-primary:hover {
+        background: #a4e0fd;
+      }
 
-  .btn-secondary {
-    background: var(--elevated);
-    color: var(--text);
-  }
-  .btn-secondary:hover { border-color: #3a3a44; background: #26262e; }
+      .btn-secondary {
+        background: var(--elevated);
+        color: var(--text);
+      }
+      .btn-secondary:hover {
+        border-color: #3a3a44;
+        background: #26262e;
+      }
 
-  .status-row {
-    font-family: var(--mono);
-    font-size: 13.5px;
-    color: var(--muted);
-  }
-  .status-row .sep { color: #44444e; padding: 0 4px; }
+      .status-row {
+        font-family: var(--mono);
+        font-size: 13.5px;
+        color: var(--muted);
+      }
+      .status-row .sep {
+        color: #44444e;
+        padding: 0 4px;
+      }
 
-  /* ---------- generic section ---------- */
-  section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+      /* ---------- generic section ---------- */
+      section {
+        padding: 64px 0;
+        border-bottom: 1px solid var(--border);
+      }
 
-  .eyebrow {
-    font-family: var(--mono);
-    font-size: 12.5px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 14px;
-  }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 14px;
+      }
 
-  h2 { font-size: clamp(26px, 5vw, 34px); margin: 0 0 24px; font-weight: 700; }
+      h2 {
+        font-size: clamp(26px, 5vw, 34px);
+        margin: 0 0 24px;
+        font-weight: 700;
+      }
 
-  /* ---------- pitch ---------- */
-  .pitch {
-    font-size: clamp(19px, 3.2vw, 23px);
-    line-height: 1.55;
-    color: var(--text);
-    margin: 0;
-    border-left: 2px solid var(--accent);
-    padding-left: 24px;
-  }
-  .pitch .muted { color: var(--muted); }
-  .pitch .hl { color: var(--success); }
+      /* ---------- pitch ---------- */
+      .pitch {
+        font-size: clamp(19px, 3.2vw, 23px);
+        line-height: 1.55;
+        color: var(--text);
+        margin: 0;
+        border-left: 2px solid var(--accent);
+        padding-left: 24px;
+      }
+      .pitch .muted {
+        color: var(--muted);
+      }
+      .pitch .hl {
+        color: var(--success);
+      }
 
-  /* ---------- before / after diagram ---------- */
-  .ba-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
+      /* ---------- before / after diagram ---------- */
+      .ba-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
 
-  .tree-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .tree-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    background: var(--elevated);
-  }
-  .tree-head .label {
-    font-family: var(--mono);
-    font-size: 12.5px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-  .tree-card.before .label { color: var(--muted); }
-  .tree-card.after .label { color: var(--success); }
-  .tree-head .size {
-    font-family: var(--mono);
-    font-size: 12.5px;
-    color: var(--muted);
-  }
+      .tree-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .tree-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        background: var(--elevated);
+      }
+      .tree-head .label {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .tree-card.before .label {
+        color: var(--muted);
+      }
+      .tree-card.after .label {
+        color: var(--success);
+      }
+      .tree-head .size {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        color: var(--muted);
+      }
 
-  pre.tree {
-    margin: 0;
-    padding: 18px;
-    font-size: 13.5px;
-    line-height: 1.7;
-    overflow-x: auto;
-    color: var(--text);
-    white-space: pre;
-    tab-size: 2;
-  }
-  pre.tree .dim { color: var(--muted); }
-  pre.tree .ok { color: var(--success); }
-  pre.tree .link { color: var(--accent); }
-  pre.tree .tw { color: var(--accent); }
+      pre.tree {
+        margin: 0;
+        padding: 18px;
+        font-size: 13.5px;
+        line-height: 1.7;
+        overflow-x: auto;
+        color: var(--text);
+        white-space: pre;
+        tab-size: 2;
+      }
+      pre.tree .dim {
+        color: var(--muted);
+      }
+      pre.tree .ok {
+        color: var(--success);
+      }
+      pre.tree .link {
+        color: var(--accent);
+      }
+      pre.tree .tw {
+        color: var(--accent);
+      }
 
-  .ba-arrow {
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-  }
-  .ba-arrow span { color: var(--success); }
+      .ba-arrow {
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+      }
+      .ba-arrow span {
+        color: var(--success);
+      }
 
-  .caption {
-    margin: 20px 0 0;
-    font-size: 15px;
-    color: var(--muted);
-    text-align: center;
-  }
+      .caption {
+        margin: 20px 0 0;
+        font-size: 15px;
+        color: var(--muted);
+        text-align: center;
+      }
 
-  /* ---------- features grid ---------- */
-  .features {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 22px 20px;
-  }
-  .card h3 {
-    margin: 0 0 8px;
-    font-size: 17px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .card .num {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--accent);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 2px 7px;
-    line-height: 1;
-  }
-  .card p { margin: 0; font-size: 15px; color: var(--muted); line-height: 1.55; }
-  .card p code {
-    color: var(--text);
-    background: var(--elevated);
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-size: 13px;
-  }
+      /* ---------- features grid ---------- */
+      .features {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 22px 20px;
+      }
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 17px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card .num {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--accent);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 2px 7px;
+        line-height: 1;
+      }
+      .card p {
+        margin: 0;
+        font-size: 15px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .card p code {
+        color: var(--text);
+        background: var(--elevated);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
 
-  /* ---------- quick start ---------- */
-  ol.steps {
-    list-style: none;
-    counter-reset: step;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 14px;
-  }
-  ol.steps li {
-    counter-increment: step;
-    position: relative;
-    padding: 18px 20px 18px 64px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    font-size: 16px;
-  }
-  ol.steps li::before {
-    content: counter(step);
-    position: absolute;
-    left: 18px;
-    top: 16px;
-    width: 30px; height: 30px;
-    display: grid;
-    place-items: center;
-    background: var(--elevated);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: var(--mono);
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--accent);
-  }
-  ol.steps li code, .after-note code {
-    color: var(--text);
-    background: var(--elevated);
-    padding: 1px 6px;
-    border-radius: 5px;
-    font-size: 13.5px;
-  }
-  .after-note {
-    margin: 22px 0 0;
-    font-size: 15px;
-    color: var(--muted);
-  }
+      /* ---------- quick start ---------- */
+      ol.steps {
+        list-style: none;
+        counter-reset: step;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 14px;
+      }
+      ol.steps li {
+        counter-increment: step;
+        position: relative;
+        padding: 18px 20px 18px 64px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 16px;
+      }
+      ol.steps li::before {
+        content: counter(step);
+        position: absolute;
+        left: 18px;
+        top: 16px;
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        background: var(--elevated);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--accent);
+      }
+      ol.steps li code,
+      .after-note code {
+        color: var(--text);
+        background: var(--elevated);
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-size: 13.5px;
+      }
+      .after-note {
+        margin: 22px 0 0;
+        font-size: 15px;
+        color: var(--muted);
+      }
 
-  /* ---------- safety callout ---------- */
-  .safety {
-    background: linear-gradient(180deg, rgba(134, 239, 172, 0.05), rgba(134, 239, 172, 0.02));
-    border: 1px solid rgba(134, 239, 172, 0.28);
-    border-radius: 12px;
-    padding: 26px 26px;
-    font-size: 16px;
-    line-height: 1.6;
-    color: var(--text);
-  }
-  .safety strong { color: var(--success); }
-  .safety code {
-    background: var(--elevated);
-    padding: 1px 6px;
-    border-radius: 5px;
-    font-size: 13.5px;
-    color: var(--text);
-  }
+      /* ---------- safety callout ---------- */
+      .safety {
+        background: linear-gradient(180deg, rgba(134, 239, 172, 0.05), rgba(134, 239, 172, 0.02));
+        border: 1px solid rgba(134, 239, 172, 0.28);
+        border-radius: 12px;
+        padding: 26px 26px;
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--text);
+      }
+      .safety strong {
+        color: var(--success);
+      }
+      .safety code {
+        background: var(--elevated);
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-size: 13.5px;
+        color: var(--text);
+      }
 
-  /* ---------- footer ---------- */
-  footer {
-    padding: 44px 0 72px;
-    border-bottom: none;
-    color: var(--muted);
-    font-size: 14.5px;
-  }
-  .footer-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 18px;
-    margin-bottom: 18px;
-    font-family: var(--mono);
-    font-size: 13.5px;
-  }
-  footer .built { line-height: 1.6; }
-  footer .copy { margin-top: 6px; color: #6a6a74; }
+      /* ---------- footer ---------- */
+      footer {
+        padding: 44px 0 72px;
+        border-bottom: none;
+        color: var(--muted);
+        font-size: 14.5px;
+      }
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        margin-bottom: 18px;
+        font-family: var(--mono);
+        font-size: 13.5px;
+      }
+      footer .built {
+        line-height: 1.6;
+      }
+      footer .copy {
+        margin-top: 6px;
+        color: #6a6a74;
+      }
 
-  /* ---------- responsive ---------- */
-  @media (min-width: 680px) {
-    .ba-grid { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 560px) {
-    .features { grid-template-columns: 1fr; }
-    header { padding: 60px 0 44px; }
-    section { padding: 52px 0; }
-    .btn { flex: 1 1 auto; justify-content: center; }
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
-
-  <!-- ============ HERO ============ -->
-  <header>
-    <div class="brandmark"><span class="dot"></span> v0.1.0 · MIT</div>
-    <h1>PhotoSync</h1>
-    <p class="tagline">Portable USB-to-cloud photo &amp; video catalog. <strong>The flash drive is your preview library; the cloud holds the originals.</strong></p>
-    <div class="cta-row">
-      <a class="btn btn-primary" href="https://github.com/erenisci/photosync/releases">Download for Windows</a>
-      <a class="btn btn-secondary" href="https://github.com/erenisci/photosync">View on GitHub</a>
-    </div>
-    <p class="status-row">MIT licensed<span class="sep">·</span>Python 3.11+<span class="sep">·</span>single binary<span class="sep">·</span>82 passing tests</p>
-  </header>
-
-  <!-- ============ PITCH ============ -->
-  <section>
-    <p class="eyebrow">Why</p>
-    <p class="pitch">You want your photos in the cloud, but you also want to carry a flash drive that previews them all — <span class="muted">without filling 1&nbsp;TB of storage on a 64&nbsp;GB stick.</span> PhotoSync uploads originals to your cloud and leaves a <span class="hl">100&nbsp;KB thumbnail</span> with the cloud URL in its place. Click any thumbnail in the on-drive HTML gallery → the full-resolution original opens from the cloud. Offline? You still see every preview.</p>
-  </section>
-
-  <!-- ============ CATALOG MODE ============ -->
-  <section>
-    <p class="eyebrow">Catalog mode</p>
-    <h2>What ends up on the drive</h2>
-    <div class="ba-grid">
-
-      <div class="tree-card before">
-        <div class="tree-head">
-          <span class="label">Before</span>
-          <span class="size">10 GB of photos</span>
+      /* ---------- responsive ---------- */
+      @media (min-width: 680px) {
+        .ba-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 560px) {
+        .features {
+          grid-template-columns: 1fr;
+        }
+        header {
+          padding: 60px 0 44px;
+        }
+        section {
+          padding: 52px 0;
+        }
+        .btn {
+          flex: 1 1 auto;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <!-- ============ HERO ============ -->
+      <header>
+        <div class="brandmark"><span class="dot"></span> v0.1.0 · MIT</div>
+        <h1>PhotoSync</h1>
+        <p class="tagline">
+          Portable USB-to-cloud photo &amp; video catalog.
+          <strong>The flash drive is your preview library; the cloud holds the originals.</strong>
+        </p>
+        <div class="cta-row">
+          <a
+            class="btn btn-primary"
+            href="https://github.com/erenisci/photosync/releases"
+            >Download for Windows</a
+          >
+          <a
+            class="btn btn-secondary"
+            href="https://github.com/erenisci/photosync"
+            >View on GitHub</a
+          >
         </div>
-<pre class="tree">D:\
+        <p class="status-row">
+          MIT licensed<span class="sep">·</span>Python 3.11+<span class="sep">·</span>single
+          binary<span class="sep">·</span>82 passing tests
+        </p>
+      </header>
+
+      <!-- ============ PITCH ============ -->
+      <section>
+        <p class="eyebrow">Why</p>
+        <p class="pitch">
+          You want your photos in the cloud, but you also want to carry a flash drive that previews
+          them all —
+          <span class="muted">without filling 1&nbsp;TB of storage on a 64&nbsp;GB stick.</span>
+          PhotoSync uploads originals to your cloud and leaves a
+          <span class="hl">100&nbsp;KB thumbnail</span> with the cloud URL in its place. Click any
+          thumbnail in the on-drive HTML gallery → the full-resolution original opens from the
+          cloud. Offline? You still see every preview.
+        </p>
+      </section>
+
+      <!-- ============ CATALOG MODE ============ -->
+      <section>
+        <p class="eyebrow">Catalog mode</p>
+        <h2>What ends up on the drive</h2>
+        <div class="ba-grid">
+          <div class="tree-card before">
+            <div class="tree-head">
+              <span class="label">Before</span>
+              <span class="size">10 GB of photos</span>
+            </div>
+            <pre class="tree">D:\
 └── 📁 PhotoSync\
     └── 📁 2024-Trip\
         ├── IMG_0001.jpg   <span class="dim">(4.8 MB original)</span>
         ├── IMG_0002.jpg   <span class="dim">(5.1 MB original)</span>
         └── clip.mp4       <span class="dim">(320 MB)</span></pre>
-      </div>
+          </div>
 
-      <div class="ba-arrow">⬆️ &nbsp;upload &amp; replace&nbsp; <span>↓</span></div>
+          <div class="ba-arrow">⬆️ &nbsp;upload &amp; replace&nbsp; <span>↓</span></div>
 
-      <div class="tree-card after">
-        <div class="tree-head">
-          <span class="label">After catalog sync</span>
-          <span class="size">~50 MB on drive · 5+ TB browsable</span>
-        </div>
-<pre class="tree">D:\
+          <div class="tree-card after">
+            <div class="tree-head">
+              <span class="label">After catalog sync</span>
+              <span class="size">~50 MB on drive · 5+ TB browsable</span>
+            </div>
+            <pre class="tree">D:\
 ├── PhotoSync.exe
 └── 📁 PhotoSync\
     └── 📁 2024-Trip\
@@ -426,75 +553,109 @@
         ├── IMG_0002.jpg          <span class="ok">(100 KB)</span>
         ├── clip.mp4.preview.jpg  <span class="dim">(video frame stub)</span>
         └── <span class="link">index.html</span>            <span class="link">← open this → clickable gallery</span></pre>
-      </div>
+          </div>
+        </div>
+        <p class="caption">Originals live in the cloud. Click any thumbnail to fetch them.</p>
+      </section>
 
+      <!-- ============ FEATURES ============ -->
+      <section>
+        <p class="eyebrow">What you get</p>
+        <h2>Built like a tool, not a service</h2>
+        <div class="features">
+          <div class="card">
+            <h3><span class="num">01</span> Two sync modes</h3>
+            <p>
+              Backup keeps originals on the drive. Catalog replaces them with thumbnail-with-URL
+              stubs and generates an HTML gallery.
+            </p>
+          </div>
+          <div class="card">
+            <h3><span class="num">02</span> Selective sync</h3>
+            <p>
+              Only files inside <code>&lt;drive&gt;/PhotoSync/</code> are touched. Other folders on
+              the drive are left alone.
+            </p>
+          </div>
+          <div class="card">
+            <h3><span class="num">03</span> SHA-256 deduplication</h3>
+            <p>
+              Content-addressed, not filename-addressed. Renames don't trigger re-uploads. A local
+              scan cache means unchanged files aren't re-hashed.
+            </p>
+          </div>
+          <div class="card">
+            <h3><span class="num">04</span> 70+ cloud providers</h3>
+            <p>
+              Bundled rclone handles transport. Google Drive, Dropbox, OneDrive, and any
+              S3-compatible store (Backblaze B2, Cloudflare R2, Wasabi, MinIO, …).
+            </p>
+          </div>
+          <div class="card">
+            <h3><span class="num">05</span> Encrypted credentials</h3>
+            <p>
+              Master-password-encrypted tokens never leave the drive in plaintext. Lose the drive,
+              lose nothing.
+            </p>
+          </div>
+          <div class="card">
+            <h3><span class="num">06</span> Zero installation</h3>
+            <p>
+              Single ~55 MB executable. Runs straight from the USB. No installers, no admin rights,
+              no left-behind registry keys.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ QUICK START ============ -->
+      <section>
+        <p class="eyebrow">Quick start</p>
+        <h2>Three steps</h2>
+        <ol class="steps">
+          <li>
+            Download <code>PhotoSync.exe</code> from the
+            <a href="https://github.com/erenisci/photosync/releases">Releases page</a> and drop it
+            on your flash drive.
+          </li>
+          <li>
+            Double-click it. The setup wizard walks you through picking a cloud, authenticating, and
+            setting a master password.
+          </li>
+          <li>
+            PhotoSync opens the <code>PhotoSync/</code> folder for you. Drop in your photos and
+            press <strong>Start</strong>.
+          </li>
+        </ol>
+        <p class="after-note">
+          After the sync finishes, double-click <code>PhotoSync/index.html</code> to browse the
+          catalog.
+        </p>
+      </section>
+
+      <!-- ============ SAFETY ============ -->
+      <section>
+        <p class="eyebrow">No data loss</p>
+        <div class="safety">
+          <strong>PhotoSync uploads first, then replaces.</strong> If an upload fails, the original
+          is never touched. Stub recognition is double-layered (<code
+            >SQLite content-hash dedup</code
+          >
+          + <code>EXIF marker check</code>), so even a wiped database can't trick the app into
+          re-uploading or destroying a stub.
+        </div>
+      </section>
+
+      <!-- ============ FOOTER ============ -->
+      <footer>
+        <div class="footer-links">
+          <a href="https://github.com/erenisci/photosync">Repo</a>
+          <a href="https://github.com/erenisci/photosync/issues">Issues</a>
+          <a href="https://github.com/erenisci/photosync/blob/main/LICENSE">License: MIT</a>
+        </div>
+        <p class="built">Built with rclone, Pillow, CustomTkinter.</p>
+        <p class="copy">© 2026 Eren İŞCİ</p>
+      </footer>
     </div>
-    <p class="caption">Originals live in the cloud. Click any thumbnail to fetch them.</p>
-  </section>
-
-  <!-- ============ FEATURES ============ -->
-  <section>
-    <p class="eyebrow">What you get</p>
-    <h2>Built like a tool, not a service</h2>
-    <div class="features">
-      <div class="card">
-        <h3><span class="num">01</span> Two sync modes</h3>
-        <p>Backup keeps originals on the drive. Catalog replaces them with thumbnail-with-URL stubs and generates an HTML gallery.</p>
-      </div>
-      <div class="card">
-        <h3><span class="num">02</span> Selective sync</h3>
-        <p>Only files inside <code>&lt;drive&gt;/PhotoSync/</code> are touched. Other folders on the drive are left alone.</p>
-      </div>
-      <div class="card">
-        <h3><span class="num">03</span> SHA-256 deduplication</h3>
-        <p>Content-addressed, not filename-addressed. Renames don't trigger re-uploads. A local scan cache means unchanged files aren't re-hashed.</p>
-      </div>
-      <div class="card">
-        <h3><span class="num">04</span> 70+ cloud providers</h3>
-        <p>Bundled rclone handles transport. Google Drive, Dropbox, OneDrive, and any S3-compatible store (Backblaze B2, Cloudflare R2, Wasabi, MinIO, …).</p>
-      </div>
-      <div class="card">
-        <h3><span class="num">05</span> Encrypted credentials</h3>
-        <p>Master-password-encrypted tokens never leave the drive in plaintext. Lose the drive, lose nothing.</p>
-      </div>
-      <div class="card">
-        <h3><span class="num">06</span> Zero installation</h3>
-        <p>Single ~55 MB executable. Runs straight from the USB. No installers, no admin rights, no left-behind registry keys.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ QUICK START ============ -->
-  <section>
-    <p class="eyebrow">Quick start</p>
-    <h2>Three steps</h2>
-    <ol class="steps">
-      <li>Download <code>PhotoSync.exe</code> from the <a href="https://github.com/erenisci/photosync/releases">Releases page</a> and drop it on your flash drive.</li>
-      <li>Double-click it. The setup wizard walks you through picking a cloud, authenticating, and setting a master password.</li>
-      <li>PhotoSync opens the <code>PhotoSync/</code> folder for you. Drop in your photos and press <strong>Start</strong>.</li>
-    </ol>
-    <p class="after-note">After the sync finishes, double-click <code>PhotoSync/index.html</code> to browse the catalog.</p>
-  </section>
-
-  <!-- ============ SAFETY ============ -->
-  <section>
-    <p class="eyebrow">No data loss</p>
-    <div class="safety">
-      <strong>PhotoSync uploads first, then replaces.</strong> If an upload fails, the original is never touched. Stub recognition is double-layered (<code>SQLite content-hash dedup</code> + <code>EXIF marker check</code>), so even a wiped database can't trick the app into re-uploading or destroying a stub.
-    </div>
-  </section>
-
-  <!-- ============ FOOTER ============ -->
-  <footer>
-    <div class="footer-links">
-      <a href="https://github.com/erenisci/photosync">Repo</a>
-      <a href="https://github.com/erenisci/photosync/issues">Issues</a>
-      <a href="https://github.com/erenisci/photosync/blob/main/LICENSE">License: MIT</a>
-    </div>
-    <p class="built">Built with rclone, Pillow, CustomTkinter.</p>
-    <p class="copy">© 2026 Eren İŞCİ</p>
-  </footer>
-
-</div>
-</body>
+  </body>
 </html>
