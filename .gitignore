@@ -33,3 +33,4 @@ Thumbs.db
 # Internal / not for the public repo
 CLAUDE.md
 docs/PROGRESS.md
+docs/DESIGN.md
