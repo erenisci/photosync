@@ -15,11 +15,16 @@ Two execution modes are supported:
 
 from __future__ import annotations
 
+import contextlib
+import ctypes
 import os
 import platform
 import sys
 import tempfile
 from pathlib import Path
+
+# Windows file attribute flag for "hidden". No-op on other platforms.
+_FILE_ATTRIBUTE_HIDDEN = 0x02
 
 # Subdirectory (relative to the USB / project root) that holds runtime state.
 DATA_DIRNAME = "data"
@@ -54,10 +59,25 @@ def get_app_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def _hide_on_windows(path: Path) -> None:
+    """Apply the Windows ``hidden`` file attribute. No-op elsewhere."""
+    if sys.platform != "win32":
+        return
+    # Older Windows / restricted FS — not worth surfacing as an error.
+    with contextlib.suppress(AttributeError, OSError):
+        ctypes.windll.kernel32.SetFileAttributesW(str(path), _FILE_ATTRIBUTE_HIDDEN)
+
+
 def get_data_dir() -> Path:
-    """Return the runtime data directory, creating it if necessary."""
+    """Return the runtime data directory, creating it (hidden) if necessary."""
     data_dir = get_app_root() / DATA_DIRNAME
+    existed = data_dir.exists()
     data_dir.mkdir(parents=True, exist_ok=True)
+    # Hide on creation so the user's file explorer doesn't show PhotoSync's
+    # internals next to their photos. Doing it only on first create keeps the
+    # cost off the hot path and respects a user who manually unhid it.
+    if not existed:
+        _hide_on_windows(data_dir)
     return data_dir
 
 

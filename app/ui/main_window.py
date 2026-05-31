@@ -9,6 +9,9 @@ Displays:
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 import threading
 from pathlib import Path
 
@@ -21,21 +24,40 @@ from app.rclone_client import RcloneClient
 from app.sync_engine import SyncStats, sync
 
 
+def _open_in_file_manager(folder: Path) -> None:
+    """Open ``folder`` in the OS file manager (Explorer / Finder / xdg)."""
+    folder = folder.resolve()
+    if sys.platform == "win32":
+        os.startfile(str(folder))  # noqa: S606 — opening a known local path
+    elif sys.platform == "darwin":
+        subprocess.run(["open", str(folder)], check=False)  # noqa: S603, S607
+    else:
+        subprocess.run(["xdg-open", str(folder)], check=False)  # noqa: S603, S607
+
+
 class MainWindow(ctk.CTk):
     """PhotoSync sync screen."""
 
     def __init__(self, settings: Settings, password: str) -> None:
         super().__init__()
         self.title("PhotoSync")
-        self.geometry("600x400")
-        self.minsize(500, 350)
+        self.geometry("600x440")
+        self.minsize(500, 380)
 
         self._settings = settings
         self._password = password
         self._running = False
         self._counts: dict[str, int] = {"uploaded": 0, "skipped": 0, "failed": 0, "total": 0}
 
+        # Make sure the PhotoSync/ folder exists so the user can drop files
+        # straight into it from the file manager. It's also opened once below
+        # if it's empty, so a first-run user actually sees where things go.
+        self._source_dir = paths.get_source_dir()
+
         self._build_ui()
+
+        if not any(self._source_dir.iterdir()):
+            self.after(400, lambda: _open_in_file_manager(self._source_dir))
 
     def _build_ui(self) -> None:
         pad = {"padx": 20, "pady": 4}
@@ -66,8 +88,17 @@ class MainWindow(ctk.CTk):
         self._lbl_match.pack(**pad)
 
         # ── Buttons ─────────────────────────────────────────────────
-        self._btn = ctk.CTkButton(self, text="▶  Start", command=self._toggle)
-        self._btn.pack(pady=12)
+        btn_row = ctk.CTkFrame(self, fg_color="transparent")
+        btn_row.pack(pady=12)
+        self._btn = ctk.CTkButton(btn_row, text="▶  Start", command=self._toggle)
+        self._btn.pack(side="left", padx=6)
+        ctk.CTkButton(
+            btn_row,
+            text="📁 Open PhotoSync folder",
+            command=lambda: _open_in_file_manager(self._source_dir),
+            fg_color="transparent",
+            border_width=1,
+        ).pack(side="left", padx=6)
 
         # ── Log area ────────────────────────────────────────────────
         self._log = ctk.CTkTextbox(self, height=120, state="disabled")
@@ -91,7 +122,7 @@ class MainWindow(ctk.CTk):
         )
         with Database() as db:
             stats = sync(
-                root=paths.get_source_dir(),
+                root=self._source_dir,
                 db=db,
                 rclone=rclone,
                 remote=self._settings.remote_name,
