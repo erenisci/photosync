@@ -52,24 +52,49 @@ the cloud of your choice.
 - **Cross-platform** — Windows, macOS, Linux. Single ~55 MB executable.
 - **Zero installation** — runs straight from the flash drive.
 
+## Download
+
+Head to the **[Releases page](../../releases/latest)** and grab one file
+for your operating system:
+
+| OS      | File to download        | Size   |
+| ------- | ----------------------- | ------ |
+| Windows | `PhotoSync-windows.exe` | ~55 MB |
+| macOS   | `PhotoSync-macos`       | ~55 MB |
+| Linux   | `PhotoSync-linux`       | ~55 MB |
+
+> ⚠️ **Don't download "Source code (zip)" — that's the repo for developers,
+> not the app.** You want the binary file listed under "Assets" with the
+> name matching your OS.
+
+That's the whole install. Bundled rclone v1.74.2 is embedded inside the
+binary; nothing else to copy.
+
 ## Quick start
 
-1. Download `PhotoSync.exe` (Windows) / `PhotoSync` (macOS/Linux) from the
-   [Releases](../../releases) page. **That's the only file you need to copy
-   to the flash drive** — rclone is bundled inside.
-2. Double-click `PhotoSync`. The setup wizard runs on first launch:
-   - Pick a cloud provider and a sync mode.
+1. **Copy the downloaded file to your flash drive.** Rename it to just
+   `PhotoSync.exe` (Windows) or `PhotoSync` (macOS/Linux) if you want a
+   cleaner filename — it works either way.
+2. **Double-click it.** First-launch caveats:
+   - **Windows SmartScreen** may show "Windows protected your PC" because
+     the binary isn't code-signed yet. Click **More info → Run anyway**.
+   - **macOS Gatekeeper** will refuse to run an unsigned binary. Open a
+     terminal in the folder and run `xattr -d com.apple.quarantine PhotoSync`,
+     then `chmod +x PhotoSync` and `./PhotoSync` — or right-click → Open.
+   - **Linux** — `chmod +x PhotoSync-linux && ./PhotoSync-linux`.
+3. The setup wizard runs on first launch:
+   - Pick a cloud provider and a sync mode (Backup or Catalog).
    - Authenticate (browser OAuth or S3 keys).
    - Choose a target folder name on the cloud side.
    - Set a master password — this encrypts your cloud credentials.
-3. PhotoSync auto-creates a `PhotoSync/` folder on the drive and opens it
+4. PhotoSync auto-creates a `PhotoSync/` folder on the drive and opens it
    in your file manager. **Drop your photos and videos there.**
-4. Press **Start**. Watch the progress; when it finishes, double-click
-   `PhotoSync/index.html` to browse your catalog.
+5. Press **Start**. When it finishes, double-click `PhotoSync/index.html`
+   to browse your catalog in a browser.
 
-> Runtime state (settings, database, encrypted credentials) lives in a
-> hidden `data/` folder PhotoSync creates next to the executable. Show
-> hidden items in your file manager if you want to see it.
+> Runtime state (settings, SQLite database, encrypted credentials) lives
+> in a hidden `data/` folder PhotoSync creates next to the executable.
+> Show hidden items in your file manager if you want to see it.
 
 ## How catalog mode works
 
@@ -131,11 +156,12 @@ cd photosync
 pip install -e ".[dev]"
 
 python scripts/download_rclone.py --target windows   # or: macos, linux
-python scripts/build.py                              # exe + release zip
+python scripts/build.py --skip-package               # bare executable
 ```
 
-Output: `dist/PhotoSync-v<version>-<os>.zip`. See [docs/BUILD.md](docs/BUILD.md)
-for the GitHub Actions release workflow and signing notes.
+Output: `dist/PhotoSync(.exe)` — a single ~55 MB binary, exactly what the
+release CI produces. See [docs/BUILD.md](docs/BUILD.md) for the GitHub
+Actions release workflow and code-signing notes.
 
 ## Development
 
