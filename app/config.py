@@ -12,7 +12,7 @@ import json
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from app import paths
 
@@ -77,7 +77,7 @@ class Settings:
             remote_name=str(data["remote_name"]),
             remote_type=str(data["remote_type"]),
             target_path=str(data["target_path"]),
-            mode=mode_raw,
+            mode=cast(SyncMode, mode_raw),
             version=version,
             created_at=str(data.get("created_at") or _utcnow_iso()),
         )

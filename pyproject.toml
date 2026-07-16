@@ -59,6 +59,10 @@ module = "customtkinter.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "PIL.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "app.ui.*"
 disable_error_code = ["misc", "no-any-return"]
 
